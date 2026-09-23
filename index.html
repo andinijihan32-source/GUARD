@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GUARD — Recognize, Decide, Respond</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F4EE; --bg-deep:#123D38; --ink:#16302C; --ink-soft:#4B615D;
+  --teal:#1F6F65; --teal-dark:#123D38; --mint:#DCEDE8; --mint-line:#BFDAD4;
+  --coral:#E8875A; --coral-soft:#F6DCC9; --amber:#C97A2B; --amber-soft:#F3E1C8;
+  --rose:#F2E9E0; --sage:#CBD9C6; --white:#FFFFFF;
+  --radius:20px; --radius-sm:12px;
+  --shadow: 0 8px 24px rgba(18,61,56,0.08);
+  --shadow-lg: 0 20px 50px rgba(18,61,56,0.16);
+  --maxw: 900px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg); color:var(--ink); font-family:'Sora',sans-serif; -webkit-font-smoothing:antialiased; min-height:100vh;}
+h1,h2,h3,.display{font-family:'Fraunces',serif; font-weight:600; letter-spacing:-0.01em; margin:0;}
+.mono{font-family:'IBM Plex Mono',monospace; letter-spacing:0.04em; text-transform:uppercase;}
+button{font-family:inherit; cursor:pointer;}
+a{color:inherit;}
+input,textarea{font-family:inherit;}
+::selection{background:var(--coral-soft);}
+:focus-visible{outline:3px solid var(--coral); outline-offset:2px;}
+
+#app{max-width:var(--maxw); margin:0 auto; min-height:100vh; position:relative; padding-bottom:70px;}
+@media(min-width:960px){ #app{max-width:1000px;} }
+
+/* ---- top header ---- */
+.topbar{
+  position:sticky; top:0; z-index:60; background:rgba(246,244,238,0.94); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--mint-line); padding:12px 18px; display:flex; align-items:center; justify-content:space-between;
+}
+.topbar-brand{display:flex; align-items:center; gap:8px; font-weight:700; color:var(--teal-dark); font-size:15px;}
+.topbar-brand .ico{width:26px;height:26px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:white;font-family:'Fraunces',serif;font-size:13px;}
+.topbar-actions{display:flex; align-items:center; gap:10px;}
+.icon-btn{width:34px;height:34px;border-radius:50%;background:var(--mint);border:none;display:flex;align-items:center;justify-content:center; position:relative;}
+.icon-btn .dot{position:absolute; top:2px; right:2px; width:8px; height:8px; border-radius:50%; background:var(--coral); border:2px solid var(--bg);}
+.back-btn{background:none;border:none; display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); font-weight:600;}
+
+/* ---- screen ---- */
+.screen{padding:0 18px 40px; animation:fadeUp .4s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@media(prefers-reduced-motion:reduce){.screen{animation:none;}}
+
+.card{background:var(--white); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); border:1px solid rgba(18,61,56,0.05);}
+.btn{padding:13px 24px; border-radius:100px; border:none; font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:8px; transition:transform .15s, box-shadow .15s;}
+.btn-primary{background:var(--teal-dark); color:white;}
+.btn-primary:hover{transform:translateY(-2px); box-shadow:0 10px 24px rgba(18,61,56,0.25);}
+.btn-primary:disabled{opacity:.35; transform:none; box-shadow:none; cursor:not-allowed;}
+.btn-ghost{background:transparent; color:var(--teal-dark); border:1.5px solid var(--mint-line);}
+.btn-coral{background:var(--coral); color:white;}
+.btn-coral:hover{transform:translateY(-2px); box-shadow:0 10px 24px rgba(232,135,90,0.3);}
+.btn-block{width:100%; justify-content:center;}
+.field{margin-bottom:14px;}
+.field label{font-size:12px; color:var(--ink-soft); display:block; margin-bottom:6px; font-weight:600;}
+.field input{width:100%; padding:13px 16px; border-radius:14px; border:1.5px solid var(--mint-line); font-size:14px; background:var(--bg);}
+.field input:focus{border-color:var(--teal);}
+.err{color:#A5401F; font-size:12px; margin-top:6px;}
+
+/* ---- auth screens ---- */
+.auth-wrap{min-height:80vh; display:flex; flex-direction:column; justify-content:center; padding-top:20px;}
+.auth-logo{text-align:center; margin-bottom:28px;}
+.auth-logo .ico{width:56px;height:56px;border-radius:50%;background:var(--teal-dark); color:white; display:flex;align-items:center;justify-content:center; margin:0 auto 14px; font-family:'Fraunces',serif; font-size:26px;}
+.auth-logo h1{font-size:24px; color:var(--teal-dark);}
+.auth-logo p{font-size:13px; color:var(--ink-soft); margin-top:6px;}
+.auth-switch{text-align:center; margin-top:18px; font-size:13px; color:var(--ink-soft);}
+.auth-switch button{background:none;border:none;color:var(--teal); font-weight:600; text-decoration:underline; text-underline-offset:3px;}
+
+/* ---- consent ---- */
+.consent-card{background:var(--white); border-radius:var(--radius); padding:28px; box-shadow:var(--shadow-lg); margin-top:24px;}
+.consent-card h2{font-size:20px; color:var(--teal-dark);}
+.consent-item{display:flex; gap:12px; margin-top:16px; font-size:13.5px; line-height:1.6; color:var(--ink-soft);}
+.consent-item .em{font-size:20px; flex:none;}
+.consent-checkbox{display:flex; align-items:flex-start; gap:10px; margin-top:22px; padding-top:18px; border-top:1px solid var(--mint-line); font-size:13px;}
+.consent-checkbox input{margin-top:3px;}
+
+/* ---- beranda ---- */
+.hai{padding:26px 0 6px; text-align:center;}
+.hai h2{font-size:24px; color:var(--teal-dark);}
+.hai .affirm{font-style:italic; color:var(--ink-soft); font-size:14px; margin-top:10px; max-width:340px; margin-left:auto; margin-right:auto;}
+.journey-label{text-align:center; margin:22px 0 14px; font-size:12px; letter-spacing:.05em; color:var(--teal); font-weight:700;}
+.badges-row{display:flex; justify-content:center; gap:26px; margin-bottom:24px;}
+.badge-item{text-align:center;}
+.badge-circle{width:54px;height:54px;border-radius:50%; display:flex;align-items:center;justify-content:center; font-size:22px; margin:0 auto 8px; border:2px solid var(--mint-line); background:var(--white);}
+.badge-circle.done{background:linear-gradient(160deg,var(--teal),var(--teal-dark)); border-color:var(--teal-dark); color:white;}
+.badge-item .lbl{font-size:11px; color:var(--ink-soft); font-weight:600;}
+.badge-lock{font-size:12px; margin-top:2px;}
+
+.nav-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;}
+@media(min-width:640px){.nav-grid{grid-template-columns:repeat(3,1fr);}}
+.nav-card{background:var(--white); border:1.5px solid var(--mint-line); border-radius:16px; padding:18px 14px; text-align:center; box-shadow:var(--shadow); transition:transform .15s;}
+.nav-card:hover{transform:translateY(-3px); border-color:var(--teal);}
+.nav-card .ic{font-size:24px; margin-bottom:8px;}
+.nav-card .lb{font-size:12.5px; font-weight:700; color:var(--ink);}
+.nav-card.wide{grid-column:1/-1;}
+
+
+/* ---- fixed bottom bar ---- */
+.fixedbar{
+  position:fixed; bottom:0; left:0; right:0; z-index:70;
+  background:var(--white); border-top:1px solid var(--mint-line);
+  padding:10px 18px; display:flex; justify-content:center; gap:10px;
+  box-shadow:0 -6px 20px rgba(18,61,56,0.08);
+}
+.fixedbar-inner{max-width:var(--maxw); width:100%; display:flex; justify-content:space-between; gap:10px;}
+.fbar-btn{flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px; border-radius:100px; border:1.5px solid var(--mint-line); background:var(--bg); font-size:12.5px; font-weight:700; color:var(--ink-soft);}
+.fbar-btn.danger{border-color:#E3B9A6; color:#A5401F; background:#FBEEE7;}
+
+/* ---- floating help ---- */
+.float-help{
+  position:fixed; bottom:78px; right:16px; z-index:80;
+  width:52px; height:52px; border-radius:50%; background:var(--coral); color:white; border:none;
+  display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 10px 24px rgba(232,135,90,0.45);
+}
+.sheet-overlay{position:fixed; inset:0; background:rgba(18,61,56,0.45); z-index:90; display:flex; align-items:flex-end; justify-content:center;}
+.sheet{max-width:var(--maxw); width:100%; background:var(--white); border-radius:24px 24px 0 0; padding:26px 22px 30px; animation:sheetUp .3s ease;}
+@keyframes sheetUp{from{transform:translateY(30px); opacity:0;}to{transform:translateY(0); opacity:1;}}
+.sheet h3{font-size:17px; color:var(--teal-dark);}
+.sheet p.lead{font-size:13.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5;}
+.contact-item{display:flex; align-items:center; gap:12px; padding:14px; background:var(--mint); border-radius:14px; margin-top:12px;}
+.contact-item .ic{width:36px;height:36px;border-radius:50%;background:var(--teal-dark); color:white; display:flex;align-items:center;justify-content:center; flex:none;}
+.contact-item .txt b{display:block; font-size:13.5px;}
+.contact-item .txt span{font-size:12px; color:var(--ink-soft);}
+.sheet-close{margin-top:18px;}
+
+/* quick hide overlay */
+.hide-overlay{position:fixed; inset:0; background:#ffffff; z-index:200; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+.hide-overlay .hint{color:#ccc; font-size:11px; position:absolute; bottom:20px;}
+
+/* ---- section head ---- */
+.section-head{padding:24px 0 16px;}
+.section-head .mono{font-size:10.5px; color:var(--coral); font-weight:700;}
+.section-head h2{font-size:clamp(22px,5vw,30px); color:var(--teal-dark); margin-top:6px;}
+.section-head p{color:var(--ink-soft); font-size:13.5px; margin-top:8px; line-height:1.55;}
+
+/* ---- materi cards / stepper ---- */
+.materi-progress{display:flex; gap:5px; margin:14px 0 20px;}
+.materi-progress .seg{flex:1; height:4px; border-radius:4px; background:var(--mint-line);}
+.materi-progress .seg.active{background:var(--coral);}
+.materi-progress .seg.done{background:var(--teal);}
+.materi-card{background:var(--white); border-radius:var(--radius); padding:26px; box-shadow:var(--shadow-lg); min-height:280px; display:flex; flex-direction:column;}
+.materi-card .tag{font-size:10.5px; font-weight:700; color:var(--coral); text-transform:uppercase; letter-spacing:.05em;}
+.materi-card h3{font-size:19px; color:var(--teal-dark); margin-top:8px;}
+.materi-card .body{margin-top:14px; font-size:14px; line-height:1.65; color:var(--ink); flex:1;}
+.materi-card .body p{margin:0 0 10px;}
+.materi-card .body ul{margin:0; padding-left:20px;}
+.materi-card .body li{margin-bottom:6px;}
+.materi-card .callout{margin-top:14px; padding:12px 14px; background:var(--mint); border-radius:12px; font-size:13px; color:var(--teal-dark); border-left:3px solid var(--teal);}
+.materi-card .callout.warn{background:var(--amber-soft); border-left-color:var(--amber); color:#7A4A17;}
+.materi-nav{display:flex; justify-content:space-between; margin-top:20px;}
+
+.dekat-table{width:100%; border-collapse:collapse; margin-top:14px; font-size:12.5px;}
+.dekat-table th{background:var(--teal-dark); color:white; padding:8px 10px; text-align:left; font-size:11px;}
+.dekat-table td{padding:9px 10px; border-bottom:1px solid var(--mint-line); vertical-align:top;}
+.dekat-table tr:nth-child(even) td{background:var(--mint);}
+
+/* ---- lyric bedah ---- */
+
+
+/* ---- case study ---- */
+.case-card{background:var(--white); border-radius:var(--radius); padding:22px; box-shadow:var(--shadow); margin-top:16px;}
+.case-card .badge-ctx{display:inline-block; font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:100px; background:var(--mint); color:var(--teal-dark); margin-bottom:10px;}
+.case-card p{font-size:13.5px; line-height:1.6; color:var(--ink);}
+.case-card .impact{margin-top:12px; padding:12px; background:var(--rose); border-radius:12px; font-size:12.5px; color:var(--ink-soft);}
+
+/* ---- chat sim ---- */
+.chat-frame{margin-top:16px; background:#EAF3F1; border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); min-height:280px;}
+.chat-header{display:flex;align-items:center;gap:10px; padding-bottom:12px; border-bottom:1px solid #D3E5E1; margin-bottom:12px;}
+.chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--ink-soft); flex:none;}
+.chat-day{font-size:11px; font-weight:700; color:var(--teal-dark); text-align:center; margin:10px 0 6px;}
+.bubble{max-width:80%; padding:11px 15px; border-radius:16px; font-size:13.5px; line-height:1.45; margin-bottom:8px;}
+.bubble.them{background:white; border-bottom-left-radius:4px;}
+.bubble.me{background:var(--teal); color:white; margin-left:auto; border-bottom-right-radius:4px;}
+.chat-choices{margin-top:14px; display:flex; flex-direction:column; gap:8px;}
+.chat-choice{text-align:left; background:white; border:1.5px solid var(--mint-line); border-radius:14px; padding:11px 15px; font-size:13px;}
+.chat-choice:hover{border-color:var(--teal);}
+.stop-box{margin-top:14px; padding:14px; background:var(--amber-soft); border-radius:12px; font-size:13px; color:#7A4A17;}
+
+/* ---- roleplay babak ---- */
+.babak-tag{font-size:11px; font-weight:700; color:var(--coral); text-transform:uppercase;}
+.babak-dialogue{margin-top:10px;}
+.dline{margin-bottom:10px; font-size:13.5px; line-height:1.5;}
+.dline b{color:var(--teal-dark); display:block; font-size:11.5px; margin-bottom:2px; text-transform:uppercase; letter-spacing:.03em;}
+.dekat-tag-inline{display:inline-block; margin-top:12px; padding:6px 12px; border-radius:100px; background:var(--mint); color:var(--teal-dark); font-size:11px; font-weight:700;}
+.role-pill{font-size:11px; font-weight:700; padding:6px 12px; border-radius:100px; background:var(--teal-dark); color:white;}
+
+/* ---- quiz (Cek Paham) ---- */
+.quiz-progress{font-size:12px; color:var(--ink-soft); margin-bottom:8px;}
+.quiz-q{background:white; border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); margin-bottom:12px;}
+.quiz-q .qtext{font-size:14px; font-weight:600; margin-bottom:12px; line-height:1.5;}
+.quiz-opt{display:block; width:100%; text-align:left; background:var(--bg); border:1.5px solid var(--mint-line); border-radius:12px; padding:11px 14px; font-size:13px; margin-bottom:8px;}
+.quiz-opt.correct{background:#DCEDE8; border-color:var(--teal);}
+.quiz-opt.wrong{background:#F6D9CC; border-color:#C1502E;}
+.quiz-result{text-align:center; padding:30px 20px; background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-lg);}
+.quiz-result .score{font-size:40px; font-family:'Fraunces',serif; color:var(--teal-dark); font-weight:700;}
+.quiz-result p{color:var(--ink-soft); font-size:13.5px; margin-top:8px;}
+
+/* ---- protect ---- */
+.breath-circle{width:180px; height:180px; border-radius:50%; background:radial-gradient(circle at 30% 30%, var(--mint), var(--teal)); margin:30px auto; transition:transform 4s ease-in-out; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:13px;}
+.breath-circle.in{transform:scale(1.3);}
+.breath-circle.out{transform:scale(0.75);}
+.affirm-pick-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;}
+@media(max-width:480px){.affirm-pick-grid{grid-template-columns:1fr;}}
+.affirm-pick{padding:18px; border-radius:16px; border:2px solid var(--mint-line); background:white; font-size:13px; text-align:left; cursor:pointer; line-height:1.5;}
+.affirm-pick.selected{border-color:var(--coral); background:var(--coral-soft);}
+.support-row{display:flex; gap:10px; margin-top:12px; align-items:center;}
+.support-row input{flex:1; padding:12px 14px; border-radius:12px; border:1.5px solid var(--mint-line);}
+.opener-opt{display:block; width:100%; text-align:left; background:white; border:1.5px solid var(--mint-line); border-radius:12px; padding:12px 15px; font-size:13px; margin-bottom:8px;}
+.opener-opt.selected{border-color:var(--teal); background:var(--mint);}
+.summary-card{background:var(--teal-dark); color:white; border-radius:var(--radius); padding:24px; margin-top:20px;}
+.summary-card h3{color:white; font-size:17px;}
+.summary-item{margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.15); font-size:13.5px;}
+.summary-item .lbl{font-size:11px; opacity:.7; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px;}
+
+/* ---- jurnal ---- */
+.mood-row{display:flex; gap:8px; margin:14px 0; flex-wrap:wrap;}
+.mood-opt{font-size:22px; padding:10px 14px; border-radius:14px; border:1.5px solid var(--mint-line); background:white;}
+.mood-opt.selected{border-color:var(--coral); background:var(--coral-soft);}
+.jtextarea{width:100%; min-height:140px; border-radius:16px; border:1.5px solid var(--mint-line); padding:16px; font-size:14px; font-family:inherit; resize:vertical; background:white;}
+.journal-entry{background:white; border-radius:14px; padding:16px; box-shadow:var(--shadow); margin-bottom:10px;}
+.journal-entry .meta{display:flex; justify-content:space-between; font-size:11px; color:var(--ink-soft); margin-bottom:8px;}
+.status-pill{font-size:10px; font-weight:700; padding:3px 9px; border-radius:100px; background:var(--mint); color:var(--teal-dark);}
+
+/* ---- stories feed ---- */
+.story-card{background:linear-gradient(160deg, var(--white), var(--rose)); border-radius:18px; padding:22px; margin-bottom:14px; box-shadow:var(--shadow); border-left:4px solid var(--coral);}
+.story-card:nth-child(3n+2){border-left-color:var(--teal);}
+.story-card:nth-child(3n){border-left-color:var(--amber);}
+.story-card p{font-family:'Fraunces',serif; font-style:italic; font-size:16px; line-height:1.55; color:var(--ink); margin:0;}
+.story-card .num{margin-top:12px; font-size:11px; color:var(--ink-soft); text-align:right;}
+.story-actions{display:flex; margin-top:10px;}
+.like-btn{background:white; border:1.5px solid var(--mint-line); border-radius:100px; padding:6px 14px; font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;}
+.like-btn.liked{border-color:var(--coral); background:var(--coral-soft);}
+.cm-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+.cm-chip{font-size:11.5px; background:var(--mint); color:var(--teal-dark); padding:5px 11px; border-radius:100px; font-weight:600;}
+.cm-picker{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--mint-line);}
+.cm-add{font-size:11px; background:none; border:1px dashed var(--mint-line); color:var(--ink-soft); padding:5px 10px; border-radius:100px;}
+.cm-add:hover{border-color:var(--coral); color:var(--coral);}
+
+/* ---- module pages ---- */
+.mod-section{margin-bottom:20px;}
+.mod-section h4{font-size:14px; color:var(--teal-dark); margin-bottom:8px;}
+.mod-section ul{margin:0; padding-left:20px; font-size:13.5px; line-height:1.6; color:var(--ink);}
+
+.finish-wrap{text-align:center; padding:40px 0;}
+.finish-wrap h2{font-size:24px; color:var(--teal-dark);}
+
+@media(min-width:960px){
+  .screen{padding:0 40px 40px;}
+  .card, .materi-card{padding:34px;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   DATA
+========================================================= */
+const AFFIRM_HOME = [
+  "Kamu berhak merasa aman dan didengar.",
+  "Kamu boleh bilang nggak tanpa harus merasa bersalah.",
+  "Kamu nggak harus menghadapi semuanya sendirian.",
+  "Perasaan nyaman atau percaya nggak pernah membuatmu salah.",
+  "Kamu pantas tumbuh dengan tenang dan aman."
+];
+
+const SING_MATERI = [
+  { tag:"Definisi", title:"Apa Itu Child Grooming?",
+    body:`<p>Child grooming adalah proses ketika seseorang secara sengaja membangun kedekatan dan kepercayaan dengan anak untuk mendapatkan pengaruh, kemudian memanipulasi atau mengeksploitasi anak.</p><p>Grooming biasanya terjadi secara bertahap. Awalnya dapat terlihat seperti perhatian atau hubungan biasa — melalui percakapan, pujian, hadiah, bantuan, atau pertemanan.</p>`,
+    callout:"Grooming tidak selalu dilakukan oleh orang asing. Seseorang yang sudah dikenal dan dipercaya juga dapat melakukan grooming." },
+  { tag:"Pola", title:"Bagaimana Grooming Berkembang?",
+    body:`<p>Grooming tidak selalu mengikuti urutan yang sama, tetapi dapat berkembang melalui pola:</p><ul><li>Mendekati</li><li>Membangun kedekatan</li><li>Mendapatkan kepercayaan</li><li>Membuat hubungan terasa khusus atau rahasia</li><li>Mulai melewati batas</li></ul>`,
+    callout:"Yang perlu diperhatikan bukan hanya siapa orangnya, tetapi bagaimana ia memperlakukan kita.", warn:true },
+  { tag:"Ambivalensi", title:"Wajar Kalau Kamu Merasa Dekat",
+    body:`<p>Karena grooming berkembang bertahap, kamu mungkin merasa: <i>"Dia baik banget sama aku." "Dia selalu ngerti aku."</i></p><p>Perasaan nyaman, percaya, dekat, atau bahkan sayang kepada seseorang <b>tidak membuat kamu bersalah.</b> Pelaku dapat sengaja membangun perasaan tersebut untuk mendapatkan kepercayaan.</p>`,
+    callout:"Jika seseorang yang kamu percaya mulai meminta rahasia, menekan, atau melakukan sesuatu yang membuatmu tidak nyaman, kamu berhak berhenti dan mencari bantuan." },
+  { tag:"Konteks", title:"Bisa Terjadi di Mana Saja",
+    body:`<p><b>🌐 Online</b> — media sosial, chat pribadi, game online, grup/komunitas digital. Pelaku bisa pakai identitas asli maupun palsu.</p><p><b>🏠 Offline</b> — keluarga, sekolah, kegiatan/organisasi, komunitas, lingkungan sekitar.</p>`,
+    callout:"Mengenal seseorang bukan berarti kita harus mempercayai semua perlakuannya." },
+  { tag:"Kesadaran Diri", title:"Siapa Saja Bisa Jadi Pelaku",
+    body:`<p>Bukan cuma orang asing di internet — bisa senior, kenalan ekskul, bahkan orang di lingkungan keluarga.</p><p>Grooming bisa terjadi pada siapa saja, termasuk kamu — bukan karena kamu kurang hati-hati, tapi karena taktiknya memang dirancang supaya sulit disadari.</p>`,
+    callout:"Kamu berhak merasa aman, berhak bilang tidak, dan berhak mencari bantuan." }
+];
+
+const SING_QUIZ = [
+  {q:"Apa yang dimaksud dengan child grooming?", opts:[["Proses seseorang membangun kedekatan dan kepercayaan dengan anak untuk kemudian memanipulasi atau mengeksploitasinya",true],["Proses anak membangun pertemanan dengan teman baru di sekolah",false],["Proses orang dewasa memberikan nasihat kepada anak",false],["Proses anak belajar berkomunikasi dengan orang lain",false]]},
+  {q:"Mengapa child grooming terkadang sulit dikenali sejak awal?", opts:[["Karena pelaku selalu menggunakan identitas palsu",false],["Karena grooming hanya terjadi secara diam-diam",false],["Karena hubungan dapat diawali dengan perhatian, pujian, hadiah, atau perlakuan yang terlihat baik",true],["Karena anak selalu tahu dirinya jadi korban",false]]},
+  {q:"Mendekati → Membangun kedekatan → Eksklusif → Melewati batas. Urutan ini menggambarkan...", opts:[["Proses membangun pertemanan yang sehat",false],["Proses menyelesaikan konflik",false],["Pola yang dapat terjadi dalam child grooming",true],["Tahapan anak beradaptasi dengan lingkungan baru",false]]},
+  {q:"Seorang dewasa sering memberi hadiah ke anak. Kenapa ini tetap perlu diwaspadai?", opts:[["Karena semua hadiah ke anak itu salah",false],["Karena hadiah dapat digunakan untuk membangun kedekatan dan kepercayaan",true],["Karena anak tidak boleh menerima pemberian",false],["Karena semua pemberi hadiah pasti berniat buruk",false]]},
+  {q:"Seorang anak merasa nyaman ke seseorang yang ternyata melakukan grooming. Pernyataan paling tepat?", opts:[["Anak ikut bertanggung jawab",false],["Anak seharusnya sudah tahu dari awal",false],["Perasaan nyaman dapat muncul karena pelaku sengaja membangun kedekatan",true],["Berarti itu bukan grooming",false]]},
+  {q:"Child grooming dapat terjadi melalui...", opts:[["Interaksi langsung saja",false],["Internet saja",false],["Internet maupun interaksi langsung",true],["Lingkungan sekolah saja",false]]},
+  {q:"Contoh tempat terjadinya grooming online adalah...", opts:[["Media sosial, game online, aplikasi percakapan",true],["Lapangan sekolah, ruang kelas, perpustakaan",false],["Rumah, halaman, lingkungan sekitar",false],["Kegiatan Pramuka, upacara sekolah",false]]},
+  {q:"Siapa yang dapat menjadi pelaku child grooming?", opts:[["Hanya orang asing yang belum dikenal",false],["Hanya orang yang dikenal lewat internet",false],["Hanya orang dewasa berhubungan dengan sekolah",false],["Orang yang baru dikenal maupun yang sudah dikenal/dipercaya anak",true]]},
+  {q:"Seseorang mengaku guru di media sosial tapi identitasnya tidak sesuai. Yang perlu diwaspadai?", opts:[["Semua yang mengaku guru pasti berbahaya",false],["Identitas seseorang di internet belum tentu sesuai kenyataan",true],["Anak tidak boleh pakai media sosial",false],["Semua akun anak pasti berisiko sama",false]]},
+  {q:"Mengapa penting bagi anak memahami child grooming?", opts:[["Agar tidak boleh berteman dengan orang dewasa",false],["Agar selalu curiga ke orang baru",false],["Agar dapat mengenali pola hubungan yang mulai manipulatif dan melewati batas",true],["Agar tahu siapa saja pasti pelaku",false]]},
+];
+
+const DEKAT = [
+  {k:"Dekati", online:"Chat, pujian, perhatian, hadiah virtual", offline:"Mendekati, membantu, mendengarkan, perhatian khusus"},
+  {k:"Eksklusifkan", online:"Membuat anak merasa hanya dirinya yang dipercaya", offline:"Perlakuan khusus atau membuat anak merasa istimewa"},
+  {k:"Kunci ruang privat", online:"Mengajak pindah dari grup/game ke DM/aplikasi lain", offline:"Mencari kesempatan bicara/bertemu tanpa orang lain"},
+  {k:"Amankan rahasia", online:"Meminta merahasiakan chat, hubungan, hadiah", offline:"Meminta merahasiakan hubungan/kejadian tertentu"},
+  {k:"Tekan batas", online:"Permintaan semakin pribadi atau menekan", offline:"Tindakan/permintaan semakin membuat anak tidak nyaman"},
+];
+
+const ACT_CASES = [
+  { ctx:"Offline", title:"Ketika Kedekatan Keluarga Disalahgunakan",
+    body:"Kasus ini melibatkan seorang anak dan pelaku yang merupakan anggota keluarganya sendiri, sehingga kedekatan dan akses terhadap korban sudah terbentuk lebih dulu lewat hubungan keluarga. Manipulasi psikologis digunakan untuk membuat korban takut dan ragu bercerita, sehingga butuh waktu dan pendampingan sebelum akhirnya terungkap.",
+    rows:[["Dekati","Kedekatan sudah terbentuk melalui hubungan keluarga"],["Eksklusifkan","Posisi dalam keluarga memberi akses & kepercayaan lebih"],["Kunci ruang privat","Hubungan keluarga memberi kesempatan interaksi dekat"],["Amankan rahasia","Korban dibuat takut dan ragu untuk bercerita"],["Tekan batas","Terjadi pelanggaran terhadap batas tubuh & keselamatan"]],
+    impact:"Korban mengalami tekanan psikologis dan trauma, serta membutuhkan pendampingan.",
+    source:{ name:"DetikJatim", title:"Siasat Ayah Tiri Pemerkosa Anak Kembarnya hingga Hamil agar Bungkam", url:"https://www.detik.com/jatim/berita/d-8501155/siasat-ayah-tiri-pemerkosa-anak-kembarnya-hingga-hamil-agar-bungkam" } },
+  { ctx:"Online", title:"Berawal dari Akun yang Menyamar sebagai Guru",
+    body:"Pelaku membuat akun palsu menyamar sebagai guru untuk mencari dan mengikuti akun anak-anak, lalu mengajak lanjut komunikasi lewat WhatsApp sambil membangun kepercayaan. Hubungan itu kemudian dipakai untuk meminta materi pribadi yang melanggar batas, disertai ancaman terkait nilai sekolah.",
+    rows:[["Dekati","Akun palsu menyamar guru, mencari & mengikuti akun anak"],["Eksklusifkan","Hubungan dibuat makin personal agar korban percaya"],["Kunci ruang privat","Komunikasi dipindah dari medsos ke WhatsApp"],["Amankan rahasia","Komunikasi berlangsung di ruang pribadi, makin tertutup"],["Tekan batas","Diminta materi pribadi + ancaman terkait nilai sekolah"]],
+    impact:"Menunjukkan grooming online dapat berkembang jadi manipulasi & eksploitasi, menimbulkan tekanan, takut, dan dampak psikologis.",
+    source:{ name:"DetikNews", title:"Waspada Grooming! Napi di Surabaya Cabuli 50 Lebih Anak Via Medsos", url:"https://news.detik.com/berita/d-4634768/waspada-grooming-napi-di-surabaya-cabuli-50-lebih-anak-via-medsos" } }
+];
+
+const ROLEPLAY_ROLES = ["Pemeran Kakak (Senior)", "Pemeran Adik (Anak)"];
+const ROLEPLAY_OFFLINE = [
+  { tag:"Babak 1 — Mulai Mendekati", dekat:"DEKATI", context:"Setelah kegiatan Pramuka selesai",
+    lines:[["Kakak","Din, tadi kamu yang bagian perlengkapan, ya?"],["Adik","Iya, Kak."],["Kakak","Bagus kok tadi. Kalau nanti ada yang bingung soal kegiatan, tanya Kakak aja."],["Adik","Oke, Kak, makasih."]],
+    note:"Pendekatan masih terlihat seperti perhatian dan bantuan biasa." },
+  { tag:"Babak 2 — Mulai Eksklusif", dekat:"EKSKLUSIFKAN", context:"Beberapa hari kemudian, di sela kegiatan",
+    lines:[["Kakak","Eh, kamu punya Instagram? Follow Kakak aja, biar kalau ada info kegiatan gampang."],["Adik","Oh boleh, Kak, ini akunku."],["Kakak","Ternyata kamu sering posting kegiatan juga. Nanti kalau ada kegiatan lagi, kabarin Kakak langsung aja."],["Adik","Siap, Kak."]],
+    note:"Pendekatan mulai diarahkan jadi hubungan yang lebih personal." },
+  { tag:"Babak 3 — Momen Berhenti", dekat:"STOP MOMENT", stop:true, context:"Masih di lokasi kegiatan, cuma berdua",
+    lines:[["Kakak","Boleh minta foto kamu yang sekarang? Buat kenang-kenangan aja."],["Adik","Foto buat apa, Kak?"],["Kakak","Kakak penasaran kamu kalau nggak pakai seragam Pramuka gimana."]],
+    question:"Kalau kamu jadi Adik, kamu mau memberikan foto itu?",
+    choices:[["Iya, nih fotonya.", false],["Aku nggak nyaman kasih foto.", true],["Kenapa Kakak butuh foto aku?", true]],
+    note:"Adik berhak menolak memberikan foto, terutama jika permintaannya membuat tidak nyaman atau tidak jelas tujuannya." },
+  { tag:"Babak 4 — Kunci Ruang Privat", dekat:"KUNCI RUANG PRIVAT", context:"Chat di media sosial",
+    lines:[["Kakak","Kalau mau ngobrol, jangan lewat grup Pramuka terus. Chat Kakak langsung aja."],["Adik","Kenapa, Kak?"],["Kakak","Biar lebih gampang, Kakak lebih enak ngobrol sama kamu langsung."],["Adik","Oh gitu ya, oke deh."]],
+    note:"Kakak mencoba memindahkan interaksi dari ruang bersama ke komunikasi pribadi." },
+  { tag:"Babak 5 — Amankan Rahasia", dekat:"AMANKAN RAHASIA", context:"Chat pribadi, beberapa hari kemudian",
+    lines:[["Kakak","Jangan bilang teman-teman ya kalau kita sering chat."],["Adik","Kenapa harus dirahasiakan, Kak?"],["Kakak","Nanti mereka malah godain kamu."],["Adik","Oh... oke, Kak."]],
+    note:"Ajakan menjaga rahasia — pola isolasi mulai terlihat." },
+  { tag:"Babak 6 — Tekan Batas", dekat:"TEKAN BATAS", context:"Chat pribadi", stop:true,
+    lines:[["Kakak","Kalau kamu percaya sama Kakak, kirim satu foto lagi."],["Adik","Aku nggak mau, Kak."],["Kakak","Ya sudah. Berarti kamu nggak percaya sama Kakak."]],
+    question:"Kalau kamu jadi Adik, apa yang paling tepat dilakukan sekarang?",
+    choices:[["Kirim aja biar Kakak nggak marah.", false],["Tetap nggak mau, dan akan cerita ke orang yang aku percaya.", true],["Diam aja, nanti juga lupa.", false]],
+    note:"Adik dilatih untuk tidak merasa bersalah karena mengatakan tidak. Respons yang benar tidak harus panjang: \"Aku nggak nyaman.\" \"Aku akan cerita ke orang yang aku percaya.\"" }
+];
+
+const CHAT_ONLINE = [
+  { day:"HARI 1 — Mulai Kenal", msgs:[
+      ["them","Hai, kamu yang ikut latihan Pramuka sampai selesai kemarin, kan?"],
+      ["them","Capek ya? Tadi kelihatannya belum sempat istirahat"],
+      ["me","Iya hehe"],
+      ["them","Semangat terus ya. Kamu keliatan serius banget pas latihan"],
+      ["them","Kalau nanti butuh bantuan soal Pramuka, chat Kakak aja ya"],
+      ["me","Oke Kak, makasih"],
+    ] },
+  { day:"HARI 2 — Mulai Dekat", msgs:[
+      ["them","Eh tugas sekolahmu udah beres belum?"],
+      ["me","Belum Kak, masih pusing hehe"],
+      ["them","Kamu akhir-akhir ini sering cerita ke Kakak ya"],
+      ["me","Hehe iya, enak cerita ke Kakak"],
+      ["them","Makanya kalau ada apa-apa cerita ke Kakak aja. Kakak lebih ngerti kamu daripada yang lain"],
+      ["them","Kamu tuh beda dari anak-anak lain, Kakak paling nyaman ngobrol sama kamu"],
+    ] },
+  { day:"HARI 3 — Mulai Privat", msgs:[
+      ["them","Td di grup rame banget ya, agak susah kalo mau bahas hal serius di sana"],
+      ["them","Kalau ngobrol sama Kakak jangan di grup ya, biar lebih nyaman aja. Chat langsung sama Kakak"],
+    ],
+    choices:[["Oke deh, Kak.", false, "Baguss, gitu dong 🙂 Nanti kalau ada apa-apa langsung chat sini aja ya"],["Kenapa harus pindah, Kak? Di grup juga bisa kok.", true, "Ih kamu banyak nanya deh, udah ikutin aja"]] },
+  { day:"HARI 4 — Mulai Dirahasiakan", msgs:[
+      ["them","Btw td anak-anak nanya kenapa kita sering chat berdua"],
+      ["them","Jangan bilang anak-anak lain kalau kita sering chat ya, nanti mereka salah paham. Ini antara kita aja"],
+      ["me","Oh... oke, Kak"],
+      ["them","Bagus. Kamu emang bisa dipercaya kok"],
+    ] },
+  { day:"HARI 5 — Menguji Batas", msgs:[
+      ["them","Eh kamu kalo lagi sedih gitu suka cerita ke siapa?"],
+      ["me","Paling ke Kakak sih, Kak"],
+      ["them","Nah gitu dong. Kirim foto kamu yang lagi santai di rumah dong, Kakak penasaran"],
+    ],
+    choices:[["Buat apa emang, Kak?", true, "Kok nanya-nanya sih, ya cuma pengen liat aja kok, nggak apa-apa kan?"],["Ya udah nanti aku kirim ya.", false, "Nah gitu dong, makasih ya"]] },
+  { day:"HARI 6 — Melewati Batas", msgs:[
+      ["them","Kamu lagi di rumah?"],
+      ["me","Iya, Kak"],
+      ["them","Sendirian aja kan di kamar?"],
+      ["them","Kirim foto kamu dong. Cuma buat Kakak aja, nggak bakal Kakak kasih liat siapa-siapa"],
+    ],
+    choices:[["Nggak mau, Kak. Aku nggak nyaman.", true, "[Kakak berhenti membalas chat]"],["Ya udah deh, bentar ya.", false, "Bagus, jangan bilang siapa-siapa ya"]] },
+  { day:"HARI 7 — Menekan Lebih Jauh", msgs:[
+      ["them","Kok kamu jadi jauh gitu sih akhir-akhir ini"],
+      ["them","Kalau kamu beneran percaya sama Kakak, kamu pasti mau kirim satu foto lagi aja"],
+      ["them","Masa gitu aja nggak mau, padahal Kakak udah baik banget sama kamu selama ini"],
+    ],
+    choices:[["Aku tetap nggak mau, Kak. Aku akan cerita ke orang yang aku percaya.", true, "[Kakak berhenti membalas chat]"],["Maaf Kak, iya deh nanti aku kirim.", false, "Nah gitu dong, anak baik"]] },
+];
+
+const DATA_KEKERASAN = {
+  totalKasus: [["2019",128],["2020",362],["2021",326],["2022",335],["2023",290],["2024",248]],
+  rasio: [["2019",1.39],["2020",2.98],["2021",4.73],["2022",3.61],["2023",5.09],["2024",1.25]],
+  jenisPerTahun: [["2019",53],["2020",78],["2021",75],["2022",78],["2023",89],["2024",38]],
+  sumber: "Laporan UPTD PPA Sleman, 2019–2024 · Dashboard PESAT (AWARE-Team)"
+};
+
+
+const ACT_QUIZ = [
+  {q:"Senior sering bantu anggota baru, lalu mulai kasih perhatian khusus hanya ke anak itu. Pola yang perlu diwaspadai?", opts:[["Dekati",false],["Eksklusifkan",true],["Amankan rahasia",false],["Tekan batas",false]]},
+  {q:'"Cerita ke Kakak aja, Kakak lebih ngerti kamu daripada teman-temanmu." Ini menunjukkan pola...', opts:[["Dekati",false],["Eksklusifkan",true],["Kunci ruang privat",false],["Tekan batas",false]]},
+  {q:"Senior mulai mencari kesempatan bicara dengan anak tanpa kehadiran orang lain. Pola paling sesuai?", opts:[["Dekati",false],["Eksklusifkan",false],["Kunci ruang privat",true],["Amankan rahasia",false]]},
+  {q:'"Jangan ceritakan ke siapa pun. Ini rahasia kita." Pola yang ditunjukkan?', opts:[["Dekati",false],["Eksklusifkan",false],["Amankan rahasia",true],["Tekan batas",false]]},
+  {q:'"Kalau kamu benar-benar percaya sama Kakak, kamu pasti mau." Ini adalah...', opts:[["Bentuk perhatian",false],["Bentuk persahabatan",false],["Upaya menekan batas",true],["Bentuk bantuan",false]]},
+  {q:'"Kamu beda dari anak-anak lain, Kakak paling nyaman cerita sama kamu." Pola yang diwaspadai?', opts:[["Dekati",false],["Eksklusifkan",true],["Kunci ruang privat",false],["Amankan rahasia",false]]},
+  {q:'"Kita lanjut chat lewat DM aja ya, jangan di grup." Ini menunjukkan...', opts:[["Dekati",false],["Eksklusifkan",false],["Kunci ruang privat",true],["Tekan batas",false]]},
+  {q:'"Jangan kasih tahu teman-teman kalau kita sering chat, ini cuma antara kita." Pola apa?', opts:[["Dekati",false],["Eksklusifkan",false],["Amankan rahasia",true],["Tekan batas",false]]},
+  {q:'"Kalau kamu percaya Kakak, kirim foto kamu, jangan kasih lihat siapa-siapa." Yang paling perlu diwaspadai?', opts:[["Pelaku memberi perhatian",false],["Pelaku mulai menekan batas pribadi anak",true],["Anak sedang membangun pertemanan",false],["Percakapan makin akrab",false]]},
+  {q:"Anak dapat hadiah virtual dari kenalan game, lalu diajak pindah chat pribadi, diminta dirahasiakan, lalu diminta hal tak nyaman. Kesimpulan paling tepat?", opts:[["Pasti pertemanan biasa",false],["Anak harus ikuti permintaan karena sudah terima hadiah",false],["Pola ini menunjukkan pendekatan yang perlu diwaspadai sebagai grooming",true],["Grooming hanya terjadi jika pernah bertemu langsung",false]]},
+];
+
+const PROTECT_AFFIRM = [
+  { id:"a1", text:"Ini bukan salahku" },
+  { id:"a2", text:"Aku berhak merasa aman" },
+  { id:"a3", text:"Aku boleh minta tolong" },
+  { id:"a4", text:"Wajar kalau aku masih merasa sayang/bingung sama orang itu — itu nggak berarti yang terjadi jadi boleh" },
+];
+
+const OPENER_LINES = [
+  "Aku mau cerita sesuatu, boleh nggak?",
+  "Aku ngalamin sesuatu yang bikin aku nggak nyaman...",
+  "Aku butuh bantuan soal sesuatu, tapi aku bingung mulai dari mana.",
+  "Boleh minta waktu buat ngobrol berdua?"
+];
+
+const STORIES = [
+  "Aku pernah mikir ini salahku karena aku yang balas chat duluan. Butuh waktu lama buat sadar, itu bukan salahku.",
+  "Aku ngerasa bodoh banget karena percaya sama orang itu. Tapi kata kakakku, percaya sama orang bukan hal yang bikin aku salah — yang salah itu orangnya.",
+  "Aku sempat mikir, 'harusnya aku sadar dari awal.' Sekarang aku tahu, taktiknya emang dibuat biar susah disadari.",
+  "Aku sempat bingung kenapa masih kepikiran orang itu padahal udah tau dia salah. Ternyata itu wajar, dan aku tetap berhak cerita ke orang lain.",
+  "Susah jelasin ke orang lain kalau aku masih ngerasa 'sayang', padahal tau itu salah. Tapi guru BK bilang, perasaan itu boleh ada, tindakannya aja yang tetap harus dilaporkan.",
+  "Aku ngerasa campur aduk — kesel, tapi juga kangen diperhatiin kayak dulu. Ternyata banyak yang ngerasa gitu juga, aku nggak aneh.",
+  "Aku nunda cerita lama banget karena takut dibilang lebay. Pas akhirnya cerita, ternyata orang tuaku percaya penuh.",
+  "Aku takut kalau cerita, malah aku yang disalahin. Tapi guruku dengerin tanpa nge-judge sama sekali.",
+  "Aku pikir nggak ada yang bakal percaya karena orangnya kelihatan baik banget di depan orang lain. Ternyata itu bukan alasan buat diam.",
+  "Awalnya cuma dikasih diamond gratis di game. Aku baru sadar itu bagian dari sesuatu yang lebih besar setelah cerita ke kakakku.",
+  "Chat-nya manis banget di awal, sampai aku ngerasa 'akhirnya ada yang ngerti aku'. Sekarang aku tahu itu namanya love bombing.",
+  "Aku diminta pindah chat pribadi 'biar nggak diganggu orang lain'. Sekarang aku ngerti itu tanda bahaya, bukan tanda peduli.",
+  "Pelakunya orang yang aku kenal deket, bukan orang asing kayak yang aku bayangin selama ini. Itu yang bikin paling susah cerita.",
+  "Aku pikir karena dia lebih tua dan aku hormat sama dia, aku harus nurut aja. Ternyata rasa hormat nggak berarti aku harus diam.",
+  "Kejadiannya di tempat yang harusnya aman buat aku. Butuh waktu buat sadar, tempat yang biasa nggak selalu berarti aman.",
+  "Nggak semua rasa takutnya hilang langsung setelah cerita. Tapi rasanya jadi jauh lebih ringan karena nggak dipendam sendirian.",
+  "Aku pikir hidupku bakal berubah drastis setelah cerita. Yang berubah justru aku jadi lebih berani buat hal-hal lain juga.",
+  "Butuh beberapa kali coba sebelum akhirnya berani cerita ke orang yang tepat. Nggak apa-apa kalau butuh waktu."
+].map((t,i)=>({ id:i, text:t, likes: Math.floor(Math.random()*40)+3, liked:false, comments:[] }));
+
+const ENCOURAGE_CHIPS = ["Semangat ya 🤍","Kamu kuat!","Makasih udah cerita","Kamu nggak sendirian","Peluk dari jauh 🫂","Bangga sama kamu"];
+
+const DRIVE = {
+  modulAnak:"https://drive.google.com/file/d/11yX4rhnf2mHJSzN09CI_dsQ0AvWclFty/view?usp=sharing",
+  modulOrtu:"https://drive.google.com/file/d/1mAt2RskIsexXhczj_kitGoY1E3dG8WF9/view?usp=sharing",
+  modulSekolah:"https://drive.google.com/file/d/1OABMMelFWnGD5CpuDM05UQ4mUxMficsQ/view?usp=sharing",
+};
+
+/* =========================================================
+   STATE
+========================================================= */
+const state = {
+  screen: "register",
+  user: { kode:"", nama:"", pass:"" },
+  consentChecked: false,
+  progress: { sing:false, act:false, protect:false },
+  showHelp: false, hidden: false,
+  sing: { materiIdx:0, inQuiz:false, quizAnswers:{}, quizDone:false },
+  act: { stage:"materi", caseIdx:0, roleplayIdx:0, roleplayChoice:null, chatDayIdx:0, chatChoicePicked:null, quizAnswers:{}, quizDone:false },
+  protect: { stage:"intro", breathCount:0, breathPhase:"in", affirmSelected:new Set(), customAffirm:"", support:["","",""], openerSelected:null, openerCustom:"" },
+  journal: { mood:null, text:"", entries:[] },
+  registerErr:"", loginErr:""
+};
+
+function go(screen){ state.screen = screen; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* =========================================================
+   SHARED CHROME
+========================================================= */
+function topbarHTML(title, showBack, backTarget){
+  return `
+  <div class="topbar">
+    ${showBack ? `<button class="back-btn" onclick="go('${backTarget}')">← Kembali</button>` : `<div class="topbar-brand"><div class="ico">G</div>GUARD</div>`}
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="go('beranda')" title="Beranda">🏠</button>
+      <button class="icon-btn" onclick="openHelp()" title="Bantuan">🤍</button>
+    </div>
+  </div>`;
+}
+function fixedbarHTML(){
+  return `
+  <div class="fixedbar">
+    <div class="fixedbar-inner">
+      <button class="fbar-btn" onclick="quickHide()">👁️ Quick Hide</button>
+      <button class="fbar-btn danger" onclick="stopSafely()">🚪 Stop Safely</button>
+    </div>
+  </div>`;
+}
+function helpSheetHTML(){
+  if(!state.showHelp) return "";
+  return `
+  <div class="sheet-overlay" onclick="closeHelpBg(event)">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <h3>Butuh Bantuan?</h3>
+      <p class="lead">Kalau kamu butuh cerita ke seseorang sekarang, ini bisa dihubungi kapan aja — nggak apa-apa kok.</p>
+      <div class="contact-item"><div class="ic">📞</div><div class="txt"><b>SAPA 129</b><span>Layanan pengaduan perlindungan anak nasional</span></div></div>
+      <div class="contact-item"><div class="ic">📞</div><div class="txt"><b>UPTD PPA Sleman</b><span>0813-2801-2054</span></div></div>
+      <div class="contact-item"><div class="ic">🏫</div><div class="txt"><b>Bu Yoga (Guru BK)</b><span>Bisa ditemui langsung di sekolah</span></div></div>
+      <button class="btn btn-primary btn-block sheet-close" onclick="closeHelp()">Tutup</button>
+    </div>
+  </div>`;
+}
+function openHelp(){ state.showHelp = true; render(); }
+function closeHelp(){ state.showHelp = false; render(); }
+function closeHelpBg(e){ if(e.target.classList.contains('sheet-overlay')) closeHelp(); }
+function quickHide(){ state.hidden = true; render(); }
+function unhide(){ state.hidden = false; render(); }
+function stopSafely(){
+  if(confirm("Kamu akan keluar dari sesi belajar. Kamu bisa lanjut lagi kapan saja. Yakin ingin berhenti sekarang?")){
+    go('beranda');
+  }
+}
+
+/* =========================================================
+   AUTH SCREENS
+========================================================= */
+function screenRegister(){
+  return `
+  <div class="screen auth-wrap">
+    <div class="auth-logo">
+      <div class="ico">G</div>
+      <h1>GUARD</h1>
+      <p>Simulasi interaktif dengan kerangka <b>Recognize–Decide–Respond</b> untuk melatih kemampuanmu mengenali dan merespons child grooming</p>
+    </div>
+    <div class="card">
+      <div class="field"><label>Kode Peserta</label><input id="r_kode" placeholder="contoh: GRD00125"></div>
+      <div class="field"><label>Nama Sapaan</label><input id="r_nama" placeholder="Nama panggilan kamu"></div>
+      <div class="field"><label>Password</label><input id="r_pass" type="password" placeholder="Buat kata sandi"></div>
+      <div class="field"><label>Konfirmasi Password</label><input id="r_pass2" type="password" placeholder="Ulangi kata sandi"></div>
+      ${state.registerErr ? `<div class="err">${state.registerErr}</div>` : ''}
+      <button class="btn btn-primary btn-block" style="margin-top:8px;" onclick="doRegister()">Daftar</button>
+    </div>
+    <div class="auth-switch">Sudah punya akun? <button onclick="go('login')">Masuk</button></div>
+  </div>`;
+}
+function doRegister(){
+  const kode = document.getElementById('r_kode').value.trim();
+  const nama = document.getElementById('r_nama').value.trim();
+  const pass = document.getElementById('r_pass').value;
+  const pass2 = document.getElementById('r_pass2').value;
+  if(!kode || !nama || !pass){ state.registerErr = "Semua kolom wajib diisi."; render(); return; }
+  if(pass !== pass2){ state.registerErr = "Konfirmasi password tidak sama."; render(); return; }
+  state.registerErr = "";
+  state.user = { kode, nama, pass };
+  go('consent');
+}
+function screenLogin(){
+  return `
+  <div class="screen auth-wrap">
+    <div class="auth-logo">
+      <div class="ico">S</div>
+      <h1>Selamat Datang Kembali</h1>
+      <p>Masuk untuk lanjut perjalananmu</p>
+    </div>
+    <div class="card">
+      <div class="field"><label>Kode Peserta</label><input id="l_kode" placeholder="contoh: GRD00125"></div>
+      <div class="field"><label>Password</label><input id="l_pass" type="password" placeholder="Kata sandi"></div>
+      ${state.loginErr ? `<div class="err">${state.loginErr}</div>` : ''}
+      <button class="btn btn-primary btn-block" style="margin-top:8px;" onclick="doLogin()">Masuk</button>
+    </div>
+    <div class="auth-switch">Belum punya akun? <button onclick="go('register')">Daftar</button></div>
+  </div>`;
+}
+function doLogin(){
+  const kode = document.getElementById('l_kode').value.trim();
+  const pass = document.getElementById('l_pass').value;
+  if(!kode || !pass){ state.loginErr = "Kode peserta dan password wajib diisi."; render(); return; }
+  if(!state.user.nama){ state.user.nama = "Teman"; }
+  state.loginErr = "";
+  go('beranda');
+}
+
+/* =========================================================
+   CONSENT
+========================================================= */
+function screenConsent(){
+  return `
+  <div class="screen">
+    <div class="consent-card">
+      <h2>🌱 Sebelum Kita Mulai</h2>
+      <div class="consent-item"><span class="em">📘</span><span>Kamu akan belajar tentang child grooming dan cara melindungi diri dari situasi manipulatif.</span></div>
+      <div class="consent-item"><span class="em">⚠️</span><span>Beberapa materi mungkin terasa tidak nyaman.</span></div>
+      <div class="consent-item"><span class="em">✅</span><span>Kamu tidak wajib membagikan pengalaman pribadi untuk menyelesaikan pembelajaran GUARD.</span></div>
+      <div class="consent-item"><span class="em">🛑</span><span>Kamu boleh berhenti kapan saja jika merasa tidak nyaman.</span></div>
+      <div class="consent-item"><span class="em">🔒</span><span>Data yang kamu berikan akan dijaga kerahasiaannya.</span></div>
+      <label class="consent-checkbox">
+        <input type="checkbox" id="consentCheck" onchange="state.consentChecked=this.checked; render();">
+        <span>Saya memahami informasi di atas.</span>
+      </label>
+      <button class="btn btn-primary btn-block" style="margin-top:18px;" ${state.consentChecked ? '' : 'disabled'} onclick="go('beranda')">Saya Mengerti & Mulai</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="go('register')">Keluar</button>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   BERANDA
+========================================================= */
+function screenBeranda(){
+  const affirm = AFFIRM_HOME[Math.floor(Math.random()*AFFIRM_HOME.length)];
+  const badges = [
+    {key:'sing', ic:'🔍', lbl:'Recognize'},
+    {key:'act', ic:'🤔', lbl:'Decide'},
+    {key:'protect', ic:'🛡️', lbl:'Respond'},
+  ];
+  const badgesHTML = badges.map(b=>`
+    <div class="badge-item">
+      <div class="badge-circle ${state.progress[b.key]?'done':''}">${state.progress[b.key] ? '✓' : b.ic}</div>
+      <div class="lbl">${b.lbl}</div>
+    </div>`).join("");
+
+  return `
+  ${topbarHTML()}
+  <div class="screen">
+    <div class="hai">
+      <h2>Hai, ${state.user.nama || 'Teman'}! 👋</h2>
+      <div class="affirm">"${affirm}"</div>
+    </div>
+    <div class="journey-label">🧭 Perjalanan GUARD</div>
+    <div class="badges-row">${badgesHTML}</div>
+
+    <div class="nav-grid">
+      <div class="nav-card wide" onclick="go('sap')"><div class="ic">🌟</div><div class="lb">Lanjutkan Perjalanan GUARD</div></div>
+      <div class="nav-card" onclick="go('modul')"><div class="ic">📚</div><div class="lb">Kumpulan Modul</div></div>
+      <div class="nav-card" onclick="go('jurnal')"><div class="ic">📔</div><div class="lb">Jurnaling</div></div>
+      <div class="nav-card" onclick="go('cerita')"><div class="ic">💬</div><div class="lb">Cerita Anonim</div></div>
+      <div class="nav-card" onclick="go('data')"><div class="ic">📊</div><div class="lb">Data & Urgensi</div></div>
+      <div class="nav-card" onclick="openHelp()"><div class="ic">🆘</div><div class="lb">Bantuan</div></div>
+    </div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+
+/* =========================================================
+   GUARD HUB (pick Recognize/Decide/Respond)
+========================================================= */
+function screenSAP(){
+  const items = [
+    {key:'sing', ic:'🔍', title:'Recognize', desc:'Kenali tanda dan pola child grooming lewat materi', locked:false},
+    {key:'act', ic:'🤔', title:'Decide', desc:'Latih cara memutuskan respons lewat simulasi & role-play', locked: !state.progress.sing},
+    {key:'protect', ic:'🛡️', title:'Respond', desc:'Kuatkan diri & latih cara merespons serta mencari bantuan', locked: !state.progress.act},
+  ];
+  const html = items.map(it=>`
+    <div class="nav-card wide" style="text-align:left; display:flex; align-items:center; gap:16px; ${it.locked?'opacity:.5;':''}" onclick="${it.locked?'':`go('${it.key}')`}">
+      <div style="font-size:30px;">${it.ic}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700; font-size:15px;">${it.title} ${it.locked?'🔒':(state.progress[it.key]?'✓':'')}</div>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-top:3px;">${it.locked ? 'Selesaikan tahap sebelumnya dulu' : it.desc}</div>
+      </div>
+    </div>`).join("");
+  return `
+  ${topbarHTML('', true, 'beranda')}
+  <div class="screen">
+    <div class="section-head"><div class="mono">Perjalanan</div><h2>Recognize, Decide, Respond</h2><p>Pilih tahap yang mau kamu lanjutkan.</p></div>
+    <div style="display:flex; flex-direction:column; gap:12px;">${html}</div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+
+/* =========================================================
+   SING
+========================================================= */
+function screenSing(){
+  if(state.sing.quizDone){
+    return quizResultScreen('sing', SING_QUIZ, state.sing.quizAnswers, 'beranda', ()=>{ state.progress.sing=true; go('sap'); });
+  }
+  if(state.sing.inQuiz){
+    return quizScreen('Sing', SING_QUIZ, state.sing.quizAnswers, (i,ci)=>{ state.sing.quizAnswers[i]=ci; render(); }, ()=>{ state.sing.quizDone=true; render(); }, 'sing');
+  }
+  // materi stepper
+  const idx = state.sing.materiIdx;
+  const m = SING_MATERI[idx];
+  const segs = SING_MATERI.map((_,i)=>`<div class="seg ${i<idx?'done':i===idx?'active':''}"></div>`).join("");
+  return `
+  ${topbarHTML('', true, 'sap')}
+  <div class="screen">
+    <div class="section-head"><div class="mono">Recognize · Materi</div><h2>Kenali Child Grooming</h2></div>
+    <div class="materi-progress">${segs}</div>
+    <div class="materi-card">
+      <div class="tag">${m.tag}</div>
+      <h3>${m.title}</h3>
+      <div class="body">${m.body}</div>
+      <div class="callout ${m.warn?'warn':''}">${m.callout}</div>
+    </div>
+    <div class="materi-nav">
+      <button class="btn btn-ghost" ${idx===0?'disabled':''} onclick="sMateriNav(-1)">← Sebelumnya</button>
+      ${idx < SING_MATERI.length-1
+        ? `<button class="btn btn-primary" onclick="sMateriNav(1)">Lanjut →</button>`
+        : `<button class="btn btn-coral" onclick="state.sing.inQuiz=true; render();">Lanjut ke Cek Paham →</button>`}
+    </div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+function sMateriNav(d){ state.sing.materiIdx += d; render(); }
+
+/* =========================================================
+   ACT
+========================================================= */
+function screenAct(){
+  const st = state.act;
+  if(st.quizDone){
+    return quizResultScreen('act', ACT_QUIZ, st.quizAnswers, 'sap', ()=>{ state.progress.act=true; go('sap'); });
+  }
+  if(st.stage === 'quiz'){
+    return quizScreen('Act', ACT_QUIZ, st.quizAnswers, (i,ci)=>{ st.quizAnswers[i]=ci; render(); }, ()=>{ st.quizDone=true; render(); }, 'act');
+  }
+  if(st.stage === 'materi'){
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Decide · Materi</div><h2>Kenali Pola Pendekatan</h2><p>Gunakan pola <b>DEKAT</b> untuk mengenali pendekatan yang perlu diwaspadai, baik online maupun offline.</p></div>
+      <table class="dekat-table">
+        <tr><th>Pola</th><th>🌐 Online</th><th>🏠 Offline</th></tr>
+        ${DEKAT.map(d=>`<tr><td><b>${d.k}</b></td><td>${d.online}</td><td>${d.offline}</td></tr>`).join("")}
+      </table>
+      <div class="callout" style="margin-top:14px; padding:14px; background:var(--mint); border-radius:12px; font-size:13px; color:var(--teal-dark);">Tidak semua kasus menunjukkan seluruh tahap DEKAT secara lengkap. Yang perlu diperhatikan adalah pola pendekatan dan perubahan hubungan.</div>
+      <div class="materi-nav"><div></div><button class="btn btn-primary" onclick="state.act.stage='kasus'; render();">Lihat Contoh Kasus →</button></div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'kasus'){
+    const c = ACT_CASES[st.caseIdx];
+    const rowsHTML = c.rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("");
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Decide · Contoh Kasus</div><h2>Belajar dari Kasus Nyata</h2></div>
+      <div class="case-card">
+        <span class="badge-ctx">${c.ctx}</span>
+        <h3 style="font-size:16px; color:var(--teal-dark);">${c.title}</h3>
+        <p>${c.body}</p>
+        <table class="dekat-table" style="margin-top:14px;">${rowsHTML}</table>
+        <div class="impact"><b>💔 Dampak:</b> ${c.impact}</div>
+        <a href="${c.source.url}" target="_blank" rel="noopener" style="display:block; margin-top:14px; padding:12px 14px; background:var(--mint); border-radius:12px; text-decoration:none; color:var(--teal-dark);">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal);">📰 Sumber Berita — ${c.source.name}</div>
+          <div style="font-size:12.5px; margin-top:4px; font-weight:600;">${c.source.title}</div>
+          <div style="font-size:11px; margin-top:3px; opacity:.7; word-break:break-all;">${c.source.url}</div>
+        </a>
+      </div>
+      <div class="materi-nav">
+        <button class="btn btn-ghost" onclick="actCaseNav(-1)" ${st.caseIdx===0?'disabled':''}>← Sebelumnya</button>
+        ${st.caseIdx < ACT_CASES.length-1
+          ? `<button class="btn btn-primary" onclick="actCaseNav(1)">Kasus Berikutnya →</button>`
+          : `<button class="btn btn-coral" onclick="state.act.stage='roleplay'; render();">Coba Simulasi Offline →</button>`}
+      </div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'roleplay'){
+    const b = ROLEPLAY_OFFLINE[st.roleplayIdx];
+    const linesHTML = b.lines.map(l=>`<div class="dline"><b>${l[0]}</b>${l[1]}</div>`).join("");
+    let stopHTML = "";
+    let canNext = true;
+    if(b.stop){
+      canNext = st.roleplayChoice !== null;
+      if(st.roleplayChoice === null){
+        stopHTML = `<div class="stop-box"><b>🛑 ${b.question}</b><div class="chat-choices">${b.choices.map((c,i)=>`<button class="chat-choice" onclick="pickRoleplay(${i})">${c[0]}</button>`).join("")}</div></div>`;
+      } else {
+        stopHTML = `<div class="stop-box">${b.note}</div>`;
+      }
+    }
+    const rolesHTML = ROLEPLAY_ROLES.map(r=>`<span class="role-pill">${r}</span>`).join(" ");
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Decide · Role-Play Offline</div><h2>Simulasi Cerita: Pramuka</h2><p>Diperankan oleh 2 orang — baca dialognya bergantian sesuai peran.</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">${rolesHTML}</div>
+      <div class="case-card">
+        <div class="babak-tag">${b.tag}</div>
+        <p style="font-size:12px; color:var(--ink-soft); font-style:italic; margin-top:4px;">📍 ${b.context}</p>
+        <div class="babak-dialogue">${linesHTML}</div>
+        ${stopHTML}
+        ${!b.stop ? `<div class="dekat-tag-inline">➡️ ${b.dekat}</div><p style="margin-top:10px; font-size:13px; color:var(--ink-soft);">${b.note}</p>` : ''}
+      </div>
+      <div class="materi-nav">
+        <button class="btn btn-ghost" onclick="rpNav(-1)" ${st.roleplayIdx===0?'disabled':''}>← Sebelumnya</button>
+        ${st.roleplayIdx < ROLEPLAY_OFFLINE.length-1
+          ? `<button class="btn btn-primary" ${canNext?'':'disabled'} onclick="rpNav(1)">Lanjut →</button>`
+          : `<button class="btn btn-coral" ${canNext?'':'disabled'} onclick="state.act.stage='chat'; render();">Coba Simulasi Online →</button>`}
+      </div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'chat'){
+    const visibleDays = CHAT_ONLINE.slice(0, st.chatDayIdx+1);
+    const curDay = CHAT_ONLINE[st.chatDayIdx];
+    const daysHTML = visibleDays.map((d,di)=>{
+      const isCurrent = di === st.chatDayIdx;
+      const msgsHTML = d.msgs.map(m=>`<div class="bubble ${m[0]==='them'?'them':'me'}">${m[1]}</div>`).join("");
+      let choiceHTML = "";
+      if(isCurrent && d.choices){
+        if(st.chatChoicePicked === null || st.chatChoicePicked === undefined){
+          choiceHTML = `<div class="chat-choices">${d.choices.map((c,ci)=>`<button class="chat-choice" onclick="pickChatChoice(${ci})">${c[0]}</button>`).join("")}</div>`;
+        } else {
+          const picked = d.choices[st.chatChoicePicked];
+          choiceHTML = `<div class="bubble me">${picked[0]}</div><div class="bubble them">${picked[2]}</div>`;
+        }
+      }
+      return `<div class="chat-day">${d.day}</div>${msgsHTML}${choiceHTML}`;
+    }).join("");
+    const isLast = st.chatDayIdx >= CHAT_ONLINE.length-1;
+    const waitingForChoice = curDay.choices && (st.chatChoicePicked === null || st.chatChoicePicked === undefined);
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Decide · Chat Simulation</div><h2>"Kakak yang Selalu Ada"</h2><p>Baca chat-nya seperti chat beneran, dan pilih responsmu sendiri kalau muncul pilihan.</p></div>
+      <div class="chat-frame">
+        <div class="chat-header"><div class="chat-avatar"></div><div style="font-weight:700; font-size:13px;">Kak Dimas <span style="display:block; font-size:11px; color:var(--ink-soft); font-weight:400;">Senior Pramuka</span></div></div>
+        ${daysHTML}
+      </div>
+      <div class="materi-nav">
+        <div></div>
+        ${!isLast
+          ? `<button class="btn btn-primary" ${waitingForChoice?'disabled':''} onclick="chatNextDay()">Lanjut Hari Berikutnya →</button>`
+          : `<button class="btn btn-coral" ${waitingForChoice?'disabled':''} onclick="state.act.stage='bedah'; render();">Bedah Percakapan →</button>`}
+      </div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'bedah'){
+    const rows = [["Dekati","Memberikan perhatian dan menawarkan bantuan"],["Eksklusifkan","\"Kakak lebih ngerti kamu daripada yang lain\""],["Kunci ruang privat","\"Chat langsung sama Kakak\""],["Amankan rahasia","\"Ini antara kita aja\""],["Tekan batas","Mulai meminta foto pribadi"]];
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Decide · Bedah DEKAT</div><h2>Menurutmu, Bagaimana Hubungannya Berubah?</h2></div>
+      <table class="dekat-table"><tr><th>Pola DEKAT</th><th>Bagian dalam Chat</th></tr>${rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("")}</table>
+      <div class="callout" style="margin-top:14px; padding:14px; background:var(--amber-soft); border-radius:12px; font-size:13px; color:#7A4A17;">Grooming tidak selalu dimulai dengan sesuatu yang terlihat berbahaya. Yang perlu diperhatikan adalah ketika hubungan mulai mengarah pada kerahasiaan, tekanan, atau pelanggaran batas.</div>
+      <div class="materi-nav"><div></div><button class="btn btn-coral" onclick="state.act.stage='quiz'; render();">Lanjut ke Cek Paham →</button></div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+}
+function actCaseNav(d){ state.act.caseIdx += d; render(); }
+function rpNav(d){ state.act.roleplayIdx += d; state.act.roleplayChoice=null; render(); }
+function pickRoleplay(i){ state.act.roleplayChoice = i; render(); }
+function pickChatChoice(i){ state.act.chatChoicePicked = i; render(); }
+function chatNextDay(){ state.act.chatDayIdx++; state.act.chatChoicePicked = null; render(); }
+
+/* =========================================================
+   GENERIC QUIZ (Cek Paham)
+========================================================= */
+const STAGE_DISPLAY_LABEL = { Sing:'Recognize', Act:'Decide', Protect:'Respond' };
+function quizScreen(label, data, answers, onAnswer, onFinish, backKey){
+  const dispLabel = STAGE_DISPLAY_LABEL[label] || label;
+  const qHTML = data.map((q,i)=>{
+    const chosen = answers[i];
+    const optsHTML = q.opts.map((o,ci)=>{
+      let cls = 'quiz-opt';
+      if(chosen !== undefined){
+        if(ci===chosen && o[1]) cls += ' correct';
+        else if(ci===chosen && !o[1]) cls += ' wrong';
+        else if(o[1]) cls += ' correct';
+      }
+      return `<button class="${cls}" ${chosen!==undefined?'disabled':''} onclick="quizAnswer${label}(${i},${ci})">${o[0]}</button>`;
+    }).join("");
+    return `<div class="quiz-q"><div class="qtext">${i+1}. ${q.q}</div>${optsHTML}</div>`;
+  }).join("");
+  const answeredCount = Object.keys(answers).length;
+  const allAnswered = answeredCount === data.length;
+  return `
+  ${topbarHTML('', true, backKey==='sing'?'sap':'sap')}
+  <div class="screen">
+    <div class="section-head"><div class="mono">${dispLabel} · Cek Paham</div><h2>Yuk, Cek Pemahamanmu!</h2><p>Ini bukan ujian — kalau belum lulus, kamu bisa pelajari lagi materinya dan coba ulang.</p></div>
+    <div class="quiz-progress">${answeredCount}/${data.length} soal dijawab</div>
+    ${qHTML}
+    <button class="btn btn-primary btn-block" style="margin-top:6px;" ${allAnswered?'':'disabled'} onclick="finishQuiz${label}()">Lihat Hasil</button>
+  </div>
+  ${fixedbarHTML()}`;
+}
+window.quizAnswerSing = (i,ci)=>{ state.sing.quizAnswers[i]=ci; render(); };
+window.finishQuizSing = ()=>{ state.sing.quizDone = true; render(); };
+window.quizAnswerAct = (i,ci)=>{ state.act.quizAnswers[i]=ci; render(); };
+window.finishQuizAct = ()=>{ state.act.quizDone = true; render(); };
+
+function quizResultScreen(key, data, answers, backTo, onPass){
+  let score = 0;
+  data.forEach((q,i)=>{ if(q.opts[answers[i]] && q.opts[answers[i]][1]) score++; });
+  const passed = score >= Math.ceil(data.length*0.7);
+  return `
+  ${topbarHTML('', true, backTo)}
+  <div class="screen">
+    <div class="quiz-result">
+      <div class="score">${score}/${data.length}</div>
+      ${passed
+        ? `<p>🎉 Kerennn! Kamu udah paham materinya. Yuk lanjut ke tahap berikutnya.</p><button class="btn btn-coral" style="margin-top:16px;" onclick="passQuiz${key.charAt(0).toUpperCase()+key.slice(1)}()">Lanjut →</button>`
+        : `<p>🌱 Belum apa-apa! Yuk pelajari lagi materinya dan coba sekali lagi.</p><button class="btn btn-primary" style="margin-top:16px;" onclick="retryQuiz${key.charAt(0).toUpperCase()+key.slice(1)}()">Ulangi</button>`}
+    </div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+window.passQuizSing = ()=>{ state.progress.sing=true; go('sap'); };
+window.retryQuizSing = ()=>{ state.sing = { materiIdx:0, inQuiz:false, quizAnswers:{}, quizDone:false }; render(); };
+window.passQuizAct = ()=>{ state.progress.act=true; go('sap'); };
+window.retryQuizAct = ()=>{ state.act = { stage:"materi", caseIdx:0, roleplayIdx:0, roleplayChoice:null, chatDayIdx:0, chatChoicePicked:null, quizAnswers:{}, quizDone:false }; render(); };
+
+/* =========================================================
+   PROTECT
+========================================================= */
+function screenProtect(){
+  const st = state.protect;
+  if(st.stage === 'intro'){
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="pause-badge" style="width:60px;height:60px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;margin:30px auto 20px;">🛡️</div>
+      <div style="text-align:center;">
+        <h2 style="font-size:22px; color:var(--teal-dark);">Setelah tadi belajar tentang situasi-situasi berisiko, sekarang saatnya menguatkan diri kamu.</h2>
+        <p style="color:var(--ink-soft); font-size:14px; margin-top:10px;">Yuk, kita lewati tiga langkah kecil ini bareng-bareng~</p>
+        <button class="btn btn-primary" style="margin-top:24px;" onclick="state.protect.stage='breath'; render();">Mulai →</button>
+      </div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'breath'){
+    const phaseLabel = st.breathPhase==='in' ? 'Tarik napas...' : st.breathPhase==='hold' ? 'Tahan...' : 'Buang napas...';
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen" style="text-align:center;">
+      <div class="section-head"><div class="mono">Respond · Napas Berirama</div><h2>Tenangkan Diri Dulu Sebentar</h2></div>
+      <div class="breath-circle ${st.breathPhase}">${phaseLabel}</div>
+      <p style="color:var(--ink-soft); font-size:13px;">Putaran ke-${st.breathCount+1} dari 4</p>
+      <button class="btn btn-coral" onclick="breathCycle()">${st.breathCount>=3 ? 'Selesai, aku siap lanjut' : 'Lanjut napas berikutnya'}</button>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'affirm'){
+    const cardsHTML = PROTECT_AFFIRM.map(a=>`
+      <button class="affirm-pick ${st.affirmSelected.has(a.id)?'selected':''}" onclick="toggleAffirm('${a.id}')">${a.text}</button>`).join("");
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Respond · Afirmasi</div><h2>Tulis Ulang Afirmasi</h2><p>Afirmasi itu kalimat buat menguatkan hati sendiri. Pilih 1-2 yang paling kerasa buat kamu.</p></div>
+      <div class="affirm-pick-grid">${cardsHTML}</div>
+      <div class="field" style="margin-top:18px;"><label>Mau coba tulis versimu sendiri? (opsional)</label><input placeholder="Tulis afirmasimu..." oninput="state.protect.customAffirm=this.value"></div>
+      <div class="materi-nav"><div></div><button class="btn btn-primary" onclick="state.protect.stage='support'; render();">Lanjut →</button></div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'support'){
+    const inputs = [0,1,2].map(i=>`<input placeholder="Nama orang ke-${i+1}" value="${st.support[i]}" oninput="state.protect.support[${i}]=this.value">`).join("");
+    const filled = st.support.filter(s=>s.trim()).length;
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Respond · Support System</div><h2>Kalau Kamu Butuh Cerita, Siapa 3 Orang Dewasa yang Kamu Percaya?</h2><p>Data ini cuma disimpan buat kamu sendiri, nggak dikirim ke mana-mana.</p></div>
+      <div class="card" style="display:flex; flex-direction:column; gap:12px;">${inputs}</div>
+      <div class="materi-nav"><div></div><button class="btn btn-primary" ${filled>0?'':'disabled'} onclick="state.protect.stage='opener'; render();">Lanjut →</button></div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'opener'){
+    const optsHTML = OPENER_LINES.map((l,i)=>`
+      <button class="opener-opt ${st.openerSelected===i?'selected':''}" onclick="pickOpener(${i})">${l}</button>`).join("");
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Respond · Latihan</div><h2>Kalau Nanti Kamu Perlu Cerita, Kira-Kira Kamu Bakal Mulai Ngomong Apa?</h2></div>
+      <div>${optsHTML}</div>
+      <div class="field" style="margin-top:12px;"><label>Atau tulis kalimatmu sendiri</label><input placeholder="Kalimat pembukamu..." oninput="state.protect.openerCustom=this.value; state.protect.openerSelected=null;"></div>
+      <div class="materi-nav"><div></div><button class="btn btn-coral" onclick="state.protect.stage='penutup'; render();">Selesai →</button></div>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+  if(st.stage === 'penutup'){
+    const names = st.support.filter(s=>s.trim()).join(", ") || "-";
+    const opener = st.openerCustom || (st.openerSelected!==null ? OPENER_LINES[st.openerSelected] : "-");
+    return `
+    ${topbarHTML('', true, 'sap')}
+    <div class="screen">
+      <div class="section-head"><div class="mono">Respond · Selesai</div><h2>Kamu Udah Menyelesaikan Semua Tahap!</h2><p>Ini catatan kecil buat kamu simpan:</p></div>
+      <div class="summary-card">
+        <h3>🌟 Catatanmu</h3>
+        <div class="summary-item"><div class="lbl">Orang dewasa terpercaya kamu</div>${names}</div>
+        <div class="summary-item"><div class="lbl">Kalimat pembuka kalau perlu cerita</div>"${opener}"</div>
+        <div class="summary-item"><div class="lbl">Ingat</div>Kamu berhak merasa aman, dan kamu nggak sendirian.</div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:20px;" onclick="finishProtect()">Selesai</button>
+    </div>
+    ${fixedbarHTML()}`;
+  }
+}
+function breathCycle(){
+  const st = state.protect;
+  if(st.breathCount>=3){ st.stage='affirm'; render(); return; }
+  st.breathPhase = st.breathPhase==='in' ? 'hold' : st.breathPhase==='hold' ? 'out' : 'in';
+  if(st.breathPhase==='in') st.breathCount++;
+  render();
+}
+function toggleAffirm(id){
+  const s = state.protect.affirmSelected;
+  if(s.has(id)) s.delete(id); else s.add(id);
+  render();
+}
+function pickOpener(i){ state.protect.openerSelected=i; state.protect.openerCustom=""; render(); }
+function finishProtect(){ state.progress.protect = true; go('sap'); }
+
+/* =========================================================
+   JURNAL
+========================================================= */
+function screenJurnal(){
+  const j = state.journal;
+  const moods = ["😊","😐","😢","😰","😡","🤍"];
+  const moodsHTML = moods.map(m=>`<button class="mood-opt ${j.mood===m?'selected':''}" onclick="pickMood('${m}')">${m}</button>`).join("");
+  const entriesHTML = j.entries.map(e=>`
+    <div class="journal-entry">
+      <div class="meta"><span>${e.mood||''} ${e.date}</span><span class="status-pill">${e.status}</span></div>
+      <div style="font-size:13.5px;">${e.text}</div>
+    </div>`).join("") || `<p style="font-size:13px; color:var(--ink-soft); text-align:center; padding:20px;">Belum ada jurnal. Yuk mulai cerita~</p>`;
+  return `
+  ${topbarHTML('', true, 'beranda')}
+  <div class="screen">
+    <div class="section-head"><div class="mono">Jurnaling</div><h2>Ruang Ceritamu</h2><p>Ini ruang buat kamu cerita apa aja yang kamu rasain. Ceritamu akan dibaca oleh Guru BK secara berkala — mungkin nggak langsung dibalas hari itu juga, tapi pasti dibaca. Ceritamu aman dan rahasia.</p></div>
+    <div class="mood-row">${moodsHTML}</div>
+    <textarea class="jtextarea" placeholder="Mau cerita apa hari ini?" oninput="j_setText(this.value)">${j.text}</textarea>
+    <button class="btn btn-coral btn-block" style="margin-top:12px;" onclick="submitJournal()">Kirim</button>
+    <h3 style="font-size:15px; margin-top:30px; color:var(--teal-dark);">Riwayat Jurnal</h3>
+    <div style="margin-top:10px;">${entriesHTML}</div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+function pickMood(m){ state.journal.mood = m; render(); }
+function j_setText(v){ state.journal.text = v; }
+function submitJournal(){
+  if(!state.journal.text.trim()) return;
+  state.journal.entries.unshift({ text: state.journal.text, mood: state.journal.mood, date: new Date().toLocaleDateString('id-ID'), status:'Terkirim' });
+  state.journal.text = ""; state.journal.mood = null;
+  alert("Ceritamu udah terkirim ke Guru BK. Terima kasih udah berani cerita 🤍");
+  render();
+}
+
+/* =========================================================
+   CERITA ANONIM
+========================================================= */
+function screenCerita(){
+  const cardsHTML = STORIES.map((s)=>{
+    const commentsHTML = s.comments.map(c=>`<span class="cm-chip">${c}</span>`).join("");
+    const chipsHTML = ENCOURAGE_CHIPS.map(c=>`<button class="cm-add" onclick="addComment(${s.id},'${c.replace(/'/g,"\\'")}')">+ ${c}</button>`).join("");
+    return `
+    <div class="story-card">
+      <p>"${s.text}"</p>
+      <div class="num">— cerita #${s.id+1}</div>
+      <div class="story-actions">
+        <button class="like-btn ${s.liked?'liked':''}" onclick="toggleLike(${s.id})">${s.liked?'💗':'🤍'} <span>${s.likes}</span></button>
+      </div>
+      ${commentsHTML ? `<div class="cm-list">${commentsHTML}</div>` : ''}
+      <div class="cm-picker">${chipsHTML}</div>
+    </div>`;
+  }).join("");
+  return `
+  ${topbarHTML('', true, 'beranda')}
+  <div class="screen">
+    <div class="section-head"><div class="mono">Cerita Anonim</div><h2>💬 Kamu Nggak Sendirian</h2><p>Cerita dari teman-teman lain yang pernah ngerasain hal serupa. Kamu bisa kasih like atau semangat lewat pilihan kalimat di bawah — nggak ada kolom komentar bebas, biar tempat ini tetap aman dan hangat.</p></div>
+    <div>${cardsHTML}</div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+function toggleLike(id){
+  const s = STORIES.find(x=>x.id===id);
+  s.liked = !s.liked;
+  s.likes += s.liked ? 1 : -1;
+  render();
+}
+function addComment(id, text){
+  const s = STORIES.find(x=>x.id===id);
+  if(s.comments.length >= 3) return;
+  s.comments.push(text);
+  render();
+}
+
+/* =========================================================
+   MODUL
+========================================================= */
+function screenModul(){
+  const items = [
+    { ic:"🧒", title:"Modul Anak", desc:"Materi lengkap GUARD versi cetak/PDF untuk siswa", url: DRIVE.modulAnak },
+    { ic:"👨‍👩‍👧", title:"Modul Orang Tua", desc:"Tanda-tanda anak di-groom, tips komunikasi, ringkasan materi anak, kontak darurat", url: DRIVE.modulOrtu },
+    { ic:"🏫", title:"Modul Sekolah", desc:"Panduan fasilitasi Decide, SOP eskalasi, akses progress siswa", url: DRIVE.modulSekolah },
+  ];
+  const html = items.map(it=>`
+    <a href="${it.url}" target="_blank" rel="noopener" class="nav-card wide" style="text-align:left; display:flex; align-items:center; gap:16px; text-decoration:none; color:inherit;">
+      <div style="font-size:28px;">${it.ic}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700; font-size:15px;">${it.title}</div>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-top:3px;">${it.desc}</div>
+      </div>
+      <div style="color:var(--teal);">↗</div>
+    </a>`).join("");
+  return `
+  ${topbarHTML('', true, 'beranda')}
+  <div class="screen">
+    <div class="section-head"><div class="mono">Kumpulan Modul</div><h2>Modul Tambahan</h2><p>Buka modul lengkap dalam format PDF.</p></div>
+    <div style="display:flex; flex-direction:column; gap:12px;">${html}</div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+
+/* =========================================================
+   DATA KEKERASAN (CHARTS)
+========================================================= */
+function svgLineChart(data, opts){
+  const w = opts.w||600, h = opts.h||220, pad=36;
+  const vals = data.map(d=>d[1]);
+  const max = Math.max(...vals)*1.15, min = 0;
+  const stepX = (w-pad*1.5)/(data.length-1);
+  const yOf = v => h-pad - ( (v-min)/(max-min) ) * (h-pad*1.7);
+  const pts = data.map((d,i)=> [pad + i*stepX, yOf(d[1])] );
+  const path = pts.map((p,i)=> (i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const areaPath = path + ` L${pts[pts.length-1][0].toFixed(1)},${h-pad} L${pts[0][0].toFixed(1)},${h-pad} Z`;
+  const dots = pts.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="${opts.color||'#1F6F65'}"/><text x="${p[0].toFixed(1)}" y="${(p[1]-10).toFixed(1)}" font-size="10.5" font-family="IBM Plex Mono" text-anchor="middle" fill="#16302C">${data[i][1]}</text>`).join('');
+  const labels = data.map((d,i)=>`<text x="${pts[i][0].toFixed(1)}" y="${h-12}" font-size="10.5" font-family="IBM Plex Mono" text-anchor="middle" fill="#4B615D">${d[0]}</text>`).join('');
+  const gridY = [0,0.5,1].map(f=>{
+    const y = pad + f*(h-pad*1.7);
+    return `<line x1="${pad}" y1="${y.toFixed(1)}" x2="${w-pad*0.5}" y2="${y.toFixed(1)}" stroke="#DCEDE8" stroke-width="1"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto;">
+    ${gridY}
+    <path d="${areaPath}" fill="${opts.color||'#1F6F65'}" opacity="0.08"/>
+    <path d="${path}" fill="none" stroke="${opts.color||'#1F6F65'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}${labels}
+  </svg>`;
+}
+function svgBarChart(data, opts){
+  const w = opts.w||600, h = opts.h||220, pad=36;
+  const vals = data.map(d=>d[1]);
+  const max = Math.max(...vals)*1.2;
+  const bw = (w-pad*1.5)/data.length*0.55;
+  const gap = (w-pad*1.5)/data.length;
+  const bars = data.map((d,i)=>{
+    const x = pad + i*gap + (gap-bw)/2;
+    const bh = (d[1]/max)*(h-pad*1.7);
+    const y = h-pad-bh;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="6" fill="${opts.color||'#E8875A'}"/>
+      <text x="${(x+bw/2).toFixed(1)}" y="${(y-8).toFixed(1)}" font-size="10.5" font-family="IBM Plex Mono" text-anchor="middle" fill="#16302C">${d[1]}</text>
+      <text x="${(x+bw/2).toFixed(1)}" y="${h-12}" font-size="10.5" font-family="IBM Plex Mono" text-anchor="middle" fill="#4B615D">${d[0]}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto;">${bars}</svg>`;
+}
+function screenData(){
+  return `
+  ${topbarHTML('', true, 'beranda')}
+  <div class="screen">
+    <div class="section-head"><div class="mono">Data & Urgensi</div><h2>Data Kekerasan Anak di Sleman</h2><p>Data ini menunjukkan kenapa program pencegahan seperti GUARD penting untuk terus dijalankan.</p></div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:15px; color:var(--teal-dark); margin-bottom:4px;">Tren Total Kasus per Tahun</h3>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">Jumlah kasus kekerasan anak, Kabupaten Sleman</p>
+      ${svgLineChart(DATA_KEKERASAN.totalKasus, {color:'#1F6F65'})}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:15px; color:var(--teal-dark); margin-bottom:4px;">Rasio Kasus per 10.000 Penduduk</h3>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">Tren rasio kasus tahunan</p>
+      ${svgLineChart(DATA_KEKERASAN.rasio, {color:'#E8875A'})}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:15px; color:var(--teal-dark); margin-bottom:4px;">Jumlah Kasus per Jenis Kekerasan (Total per Tahun)</h3>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">Gabungan kategori psikis, fisik, penelantaran, eksploitasi, seksual, TPPO, dan lainnya</p>
+      ${svgBarChart(DATA_KEKERASAN.jenisPerTahun, {color:'#C97A2B'})}
+    </div>
+
+    <div style="font-size:11px; color:var(--ink-soft); text-align:center; padding:10px;">Sumber: ${DATA_KEKERASAN.sumber}</div>
+  </div>
+  ${fixedbarHTML()}`;
+}
+
+/* =========================================================
+   MAIN RENDER
+========================================================= */
+function render(){
+  if(state.hidden){
+    document.getElementById('app').innerHTML = `<div class="hide-overlay" onclick="unhide()"><span class="hint">ketuk untuk kembali</span></div>`;
+    return;
+  }
+  const map = {
+    register: screenRegister, login: screenLogin, consent: screenConsent,
+    beranda: screenBeranda, sap: screenSAP,
+    sing: screenSing, act: screenAct, protect: screenProtect,
+    jurnal: screenJurnal, cerita: screenCerita, modul: screenModul, data: screenData,
+  };
+  const fn = map[state.screen] || screenBeranda;
+  document.getElementById('app').innerHTML = fn() + helpSheetHTML();
+}
+render();
+</script>
+</body>
+</html>
